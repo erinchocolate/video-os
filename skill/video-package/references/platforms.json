@@ -1,0 +1,10 @@
+{
+  "checked_date": "2026-10-29",
+  "exports": {"9x16": [1080, 1920], "3x4": [1080, 1440], "16x9": [1920, 1080], "4x3": [1200, 900]},
+  "platforms": {
+    "bilibili": {"cover_ratios": ["4x3", "16x9"], "status": "official_ratios_project_export_pixels", "source": "https://www.bilibili.com/opus/1106096748969852979", "note": "官方确认两种常用展示比例；像素尺寸是本项目输出约定，上传时检查两种展示位。"},
+    "youtube": {"cover_ratios": ["16x9"], "shorts_cover_ratios": ["9x16"], "status": "official_ratios_project_export_pixels", "source": "https://support.google.com/youtube/answer/72431?hl=en-GB", "note": "普通视频16:9，Shorts9:16；官方当前建议更高分辨率，本项目按现有素材输出1080p。自定义封面需验证账号，Shorts入口以账号实际界面为准。"},
+    "douyin": {"cover_ratios": ["9x16", "3x4"], "status": "project_preparation_not_platform_requirement", "source": null, "note": "本项目准备两种竖版用于上传预览，不宣称所有入口均采用此规格。"},
+    "xiaohongshu": {"cover_ratios": ["3x4", "9x16"], "status": "project_preparation_not_platform_requirement", "source": null, "note": "本项目准备两种竖版用于上传预览，不将商品笔记规则泛化为所有视频。"}
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "model": "large-v3-turbo",
+  "model_repo": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+  "model_path": "scripts/models/large-v3-turbo",
+  "model_sha256": "E76620F83D5F5B69EFD3D87E3DC180C1BD21DF9FBEBACFD4335E5E1EFCC018DA",
+  "device": "cpu",
+  "compute_type": "int8",
+  "cpu_threads": 12,
+  "asr_audio_rate": 16000,
+  "edit_audio_rate": 48000,
+  "runtime_packages": "scripts/vendor",
+  "font_path": "scripts/fonts/xinqingnian.ttf"
+}

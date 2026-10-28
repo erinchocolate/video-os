@@ -1,0 +1,19 @@
+{
+  "revision": 3,
+  "display_name": "新青年体",
+  "font": "WenYue XinQingNianTi (Non-Commercial Use) W8",
+  "postscript_name": "WenYue-XinQingNianTi-NC-W8",
+  "font_file": "scripts/fonts/xinqingnian.ttf",
+  "font_size_at_1080p": 84,
+  "portrait_font_size_at_1080p": 100,
+  "bold": false,
+  "color": "white",
+  "emphasis": "yellow",
+  "emphasis_rgb": "#FFD700",
+  "outline_px": 4,
+  "bottom_margin_px": 230,
+  "max_characters_per_line": 16,
+  "aspect_ratio": "preserve",
+  "approved": true,
+  "example_caption": {"text": "你觉得怎么样？", "emphasis": "怎么样"}
+}
