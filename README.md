@@ -16,7 +16,7 @@
 
 当前已验收环境是 **Windows、Python 3.12、FFmpeg/FFprobe**。其他操作系统尚未验收；固定版本依赖需由目标平台提供兼容的安装包。
 
-1. 安装 Git、Python 3.12（含 pip）和 FFmpeg，将 `python`、`git`、`ffmpeg`、`ffprobe` 加入 PATH。FFmpeg 需要支持 `ass`（libass）、`libx264` 和 AAC。Windows 概览小字使用系统微软雅黑字体。
+1. 安装 Git、Python 3.12（含 pip）和 FFmpeg 7 及以上（本次验证为 9.1），将 `python`、`git`、`ffmpeg`、`ffprobe` 加入 PATH。FFmpeg 需要支持 `ass`（libass）、`libx264` 和 AAC。Windows 概览小字使用系统微软雅黑字体。
 2. 克隆仓库，在仓库根目录执行：
 
 ```powershell
@@ -38,6 +38,7 @@ python -X utf8 scripts/video.py status
 Inbox/          待处理视频（本地）
 raw/            完整原片（本地）
 process/        每条视频的转写、剪辑及字幕过程（本地）
+review/         批次审阅入口、未批准粗剪与对应逐字稿（本地）
 final/          检查通过的成片（本地）
 package/        标题封面候选、修订及筛选记录（本地）
 upload/         最终选定的五类发布材料（本地，不代表已发布）
@@ -54,7 +55,7 @@ scripts/        共享脚本、配置、模板和测试
 
 ## 使用与验证
 
-把新视频放入 `Inbox/`，让 agent 按工作流处理。每条新视频必须先展示具体剪辑稿并获得针对该稿的确认；若要求字幕审核，则先审核当前版本再烧录。发布包装先给 20 组实际标题封面，用户最终选择后才导出 `upload/`。
+把新视频放入 `Inbox/`，让 agent 按工作流处理。默认先按批次生成未批准粗剪，在 review/审阅入口.html 集中审核；每条须获得针对该粗剪版本的确认后才进入定稿；若要求字幕审核，则先审核当前版本再烧录。发布包装先给 20 组实际标题封面，用户最终选择后才导出 `upload/`。
 
 ```powershell
 python -X utf8 scripts/video.py --help
@@ -64,3 +65,5 @@ python -X utf8 scripts/tests/test_packaging.py
 ```
 
 最后一条同时运行剪辑工作流测试，使用 `scripts/cache/selftest/` 下的隔离合成素材，不处理原片。测试需要已安装依赖、字体及 FFmpeg。日常修改脚本或 skill 后，可用 `git status` 检查，再提交和推送；不要使用 `git add -f` 强行加入被排除的物料。
+
+日常按[工作流说明](工作流说明.md)完成集中录制、集中审片、集中标题封面反馈和集中上传。每批`upload/批次/上传工作台.html`提供复制文案与素材链接；用户确认发布后整批归档至`upload/published/批次/`。

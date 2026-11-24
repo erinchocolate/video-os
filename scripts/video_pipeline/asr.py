@@ -3,12 +3,17 @@ import time
 import wave
 from .common import *
 
-def transcribe(job,edited=False,start=None,end=None):
+def transcribe(job,edited=False,start=None,end=None,rough=False):
     import numpy as np
     from faster_whisper import WhisperModel
     from opencc import OpenCC
     m=read(job/"manifest.json")
     folder=job/"edited" if edited else job
+    if rough:
+        if edited: raise ValueError('Choose rough or edited audio, not both')
+        from .batch import validate_rough
+        r=validate_rough(job)
+        folder=rooted(r['video']).parent
     wav_path=folder/"audio.wav"
     if edited:
         _,approval=require_approval(job)
@@ -46,7 +51,7 @@ def transcribe(job,edited=False,start=None,end=None):
             result.append(data); progress.write(json.dumps(data,ensure_ascii=False)+"\n"); progress.flush()
             print(f"[{stamp(data['start'])}–{stamp(data['end'])}] {data['text_simplified']}",flush=True)
     payload=dict(source_path=m["source_path"],input_audio=rel(wav_path),input_audio_sha256=digest(wav_path),
-                 model="large-v3-turbo",device="cpu",compute_type="int8",options=options,edited=edited,
+                 model="large-v3-turbo",device="cpu",compute_type="int8",options=options,edited=edited,rough=rough,
                  duration=finish,range_start=offset,segments=result,elapsed_seconds=round(time.monotonic()-started,1),
                  note="机器转写初稿，未宣称逐句听校；原始识别与词级时间点保留。")
     if start is not None:
@@ -62,7 +67,7 @@ def transcribe(job,edited=False,start=None,end=None):
     (folder/"transcript_asr.txt").write_text(text,encoding="utf-8-sig")
     (folder/"transcript_asr.srt").write_text("\n\n".join(f"{i}\n{stamp(s['start'],True)} --> {stamp(s['end'],True)}\n{s['text_simplified']}" for i,s in enumerate(accepted,1))+"\n",encoding="utf-8-sig")
     title=m.get("title",m["original_filename"])
-    md=f"# {'剪后' if edited else ''}逐字稿：{title}\n\n原片：`{m['source_path']}`\n\n本地识别初稿，保留口头语和重复；时间码对应{'剪后音频' if edited else '原片'}。待复核项见 `review_flags.json`；原始词级结果见 `transcript_asr.json`。\n\n"
+    md=f"# {'粗剪' if rough else '剪后' if edited else ''}逐字稿：{title}\n\n原片：`{m['source_path']}`\n\n本地识别初稿，保留口头语和重复；时间码对应{'粗剪音频' if rough else '剪后音频' if edited else '原片'}。待复核项见 `review_flags.json`；原始词级结果见 `transcript_asr.json`。\n\n"
     md+="\n\n".join(f"**{stamp(s['start'])}–{stamp(s['end'])}**\n\n{s['text_simplified'].replace(',', '，')}" for s in accepted)+"\n"
     (folder/"逐字稿.md").write_text(md,encoding="utf-8-sig")
     if not edited and m["status"]=="ingested": m["status"]="transcribed"; write(job/"manifest.json",m)

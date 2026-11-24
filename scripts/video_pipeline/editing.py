@@ -4,10 +4,8 @@ from .common import *
 
 RATE=48000
 
-def edit(job):
-    m,approval=require_approval(job)
-    if m["status"]=="completed": raise ValueError("Completed job: use a separate revision for another render")
-    if digest(rooted(m["source_path"]))!=m["original_sha256"]: raise ValueError("Source hash mismatch")
+def build_timeline(job,m,plan_hash):
+    """Shared frame-exact timeline for unapproved previews and approved renders."""
     data=read(job/"source_probe.json"); info=media_info(data)
     if info["color_transfer"] in ["smpte2084","arib-std-b67"]:
         raise ValueError("HDR needs an explicitly reviewed tone-mapping workflow; source was preserved")
@@ -23,10 +21,17 @@ def edit(job):
         cursor+=ef-sf
     tail_frames=max(1,round(0.3*fps)); total_frames=cursor+tail_frames
     samples=round(total_frames/fps*RATE)
-    rp=dict(schema_version=1,source_path=m["source_path"],source_sha256=m["original_sha256"],plan_sha256=approval["plan_sha256"],
+    return dict(schema_version=1,source_path=m["source_path"],source_sha256=m["original_sha256"],plan_sha256=plan_hash,
             fps=str(fps),width=info["width"],height=info["height"],keeps=keeps,content_frames=cursor,tail_frames=tail_frames,
             total_frames=total_frames,total_duration=float(total_frames/fps),target_audio_samples=samples,
             audio_rate=RATE,note="按源帧率就近对齐切点；4 ms 去点击淡化；约 0.3 秒末帧缓冲。")
+def edit(job):
+    m,approval=require_approval(job)
+    if m["status"]=="completed": raise ValueError("Completed job: use a separate revision for another render")
+    if digest(rooted(m["source_path"]))!=m["original_sha256"]: raise ValueError("Source hash mismatch")
+    rp=build_timeline(job,m,approval['plan_sha256'])
+    keeps=rp['keeps']; samples=rp['target_audio_samples']; fps=Fraction(rp['fps'])
+    info=media_info(read(job/'source_probe.json'))
     count=len(keeps)
     graph=[f"[0:a:0]aresample={RATE},asplit={count}"+"".join(f"[as{i}]" for i in range(count))]
     for i,c in enumerate(keeps):

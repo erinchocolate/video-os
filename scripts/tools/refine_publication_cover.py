@@ -37,6 +37,16 @@ def backdrop(photo,size,background=None):
     w,h=size
     if background:
         mode=background['mode']
+        if mode=='uncut_photo_left':
+            if h>w:
+                return ImageOps.fit(photo,size,Image.Resampling.LANCZOS,centering=(.5,.62))
+            plate=Image.open(rooted(background['landscape_plate'])).convert('RGB')
+            bg=ImageOps.fit(plate,size,Image.Resampling.LANCZOS,centering=(0,.5))
+            ph=round(h*1.35);pw=round(ph*photo.width/photo.height)
+            sharp=photo.resize((pw,ph),Image.Resampling.LANCZOS)
+            y=-round(h*.15)
+            bg.paste(sharp.crop((0,-y,pw,h-y)),(0,0))
+            return bg
         if mode=='uncut_photo':
             if h>w:
                 return ImageOps.fit(photo,size,Image.Resampling.LANCZOS,centering=(.5,.62))
@@ -121,6 +131,10 @@ def render(photo,size,lines,style,background=None):
         x=round(w*(.046 if wide else .04))
         y=round(h*(.455 if wide else .49))
         width=round(w*(.49 if wide else .43))
+        if background and background.get('mode')=='uncut_photo_left':
+            x=round(h*1.35*photo.width/photo.height+w*.035)
+            width=w-x-round(w*.035)
+            y=round(h*.38)
     padding=round(fs*.08)
     while True:
         f=font(fs)

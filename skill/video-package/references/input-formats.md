@@ -33,13 +33,7 @@ cover_lines两行，每行最多9字；按实际边界缩放后仍检查缩略�
 
 包含publication_title、cover_lines、frame_id、唯一revision_name、feedback及variants。variants为本轮少量方案，每项含id、style（direct/highlight）、label、description，可选background。生成新目录，保留旧版。
 
-background为uniform_blur时指定已准备的plate与matte_asset；solid时指定color和matte_asset。资产位于package且列入顶层assets以记录哈希。图像素材由agent调用会话图像工具处理，脚本负责现有原生排版。
-
-background为original_scene时，竖版直接保留原片照片；横版使用plate中的同场景清晰背景延展图，并以matte_asset叠加原片人物。横版生成或修复过的环境必须注明“原场景延展”，不将补绘区域宣称为原始实拍。比较虚化时，uniform_blur的plate须已由图像工具做全背景虚化，两版保留相同人物、文案与排版。
-
-首轮需适配横版且不抠图时，可用background.mode=uncut_photo及landscape_plate（同场景清晰延展资产）。竖版直接用原帧；横版按画高1.35倍缩放完整原帧、上移0.15倍画高并贴右，其矩形区域包含原始人物和真实环境，不读取matte_asset。图像工具仅负责横版画布其余场景的延展，素材需留在本条materials并注明补绘；先检查原图矩形边界的环境衔接，再批量排版。若原帧本身适合直接横向裁切，也可另做原帧构图，不必使用此模式。
-
-虚化背景可另指定portrait_plate，使用原竖版照片只虚化环境的素材，保持与实际背景版一致的构图；plate继续用于横版。两张素材都需列入assets。排版器不重绘人物，叠加的RGB仍来自原帧。
+旧background模式属于兼容输入，不作为新批次的默认制作路径。新批次按SKILL.md先用本条完整原帧制作无字、连贯的强虚化底图，再原生排版。不要使用uncut_photo_left把完整原图矩形贴回底图；这会重新引入接缝。修订候选JSON保留原candidates结构，images指向package内精确修订文件；发布包.json的review_revision_manifest指向该文件，供批次页稳定恢复。
 
 ## final_selection.json
 

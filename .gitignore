@@ -13,6 +13,9 @@
 !/process/
 !/package/
 !/upload/
+!/review/
+/review/*
+!/review/.gitkeep
 
 /Inbox/*
 !/Inbox/.gitkeep
@@ -70,3 +73,6 @@
 *.exe
 *.dll
 *.pyd
+
+# Office editor lock files
+~$*

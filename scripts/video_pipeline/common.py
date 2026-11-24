@@ -10,6 +10,10 @@ import subprocess
 
 ROOT=Path(__file__).resolve().parents[2]
 SCRIPTS=ROOT/"scripts"
+for _bin in (SCRIPTS/'cache/runtime').glob('ffmpeg*/bin'):
+    if (_bin/'ffmpeg.exe').is_file() and (_bin/'ffprobe.exe').is_file():
+        os.environ['PATH']=str(_bin)+os.pathsep+os.environ.get('PATH','')
+        break
 
 def now():
     return datetime.now(timezone.utc).isoformat()
@@ -73,6 +77,8 @@ def media_info(data):
 
 def ffmpeg(job,args,log_name):
     job=Path(job)
+    # FFmpeg 9 removed the deprecated alias; modern file-valued option syntax.
+    args=['-/filter_complex' if arg=='-filter_complex_script' else arg for arg in args]
     with (job/log_name).open("wb") as log:
         result=subprocess.run(["ffmpeg","-hide_banner","-nostdin",*map(str,args)],cwd=job,stdout=log,stderr=subprocess.STDOUT)
     if result.returncode:
@@ -122,6 +128,11 @@ def require_approval(job):
         raise ValueError("Current edit plan has no matching user approval; present the proposal first")
     if not approval.get("user_message") or approval.get("source_sha256")!=m["original_sha256"]:
         raise ValueError("Approval does not identify this source video")
+    reviewed=approval.get('rough_review')
+    if reviewed:
+        for key in ('video','transcript','timeline'):
+            if digest(rooted(reviewed[key]))!=reviewed[key+'_sha256']:
+                raise ValueError('The approved rough artifact changed: '+key)
     return m,approval
 
 def clean_segments(data):

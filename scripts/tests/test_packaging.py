@@ -105,6 +105,11 @@ def main():
     packaging.select(job,materials/'final_selection.json','合成夹具重新选定')
     next_delivery=packaging.upload_ready(job,'v2')
     assert target.exists() and next_delivery['upload_path']!=ready['upload_path']
+    m=common.read(job/'manifest.json');m['batch_id']='synthetic-batch';common.write(job/'manifest.json',m)
+    packaging.select(job,materials/'final_selection.json','合成夹具批次目录验证，与用户无关')
+    batched=packaging.upload_ready(job,'batch-test')
+    assert batched['upload_path'].startswith('upload/synthetic-batch/') and target.exists()
+    assert packaging.upload_check(job)['passed']
     report=dict(passed=True,synthetic_fixture_only=True,fixture_path=str(fixture),checks=[
         'duration-aware still extraction in package and existing materials preserved', '20 unique title/cover pairs and 80 actual images',
         'uncut photo mode preserves original portrait and rectangular foreground pixels without matte',

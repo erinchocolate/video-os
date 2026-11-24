@@ -19,6 +19,8 @@ def main():
     style=common.read(SCRIPTS/"config/subtitle_style.json")
     portrait=captions.layout(style,1080,1920)
     assert portrait["size"]==100 and portrait["max_characters"]==8
+    assert captions.display_units('或ChatGPT的界面')<8
+    assert captions.display_units('九个汉字不能放一行')>8
     landscape=captions.layout(style,1920,1080)
     assert landscape["size"]==84 and landscape["max_characters"]==16
     fixture=SCRIPTS/"cache/selftest"/uuid.uuid4().hex

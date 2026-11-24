@@ -169,7 +169,9 @@ def upload_ready(job,revision=None):
     for cover in selection['covers'].values():
         if digest(rooted(cover['path']))!=cover['sha256']:raise ValueError('Selected cover changed after selection')
     suffix='__'+safe_title(revision) if revision else ''
-    target=rooted(ROOT/'upload'/(Path(job).name+suffix))
+    upload_root=ROOT/'upload'
+    if m.get('batch_id'): upload_root=upload_root/safe_title(m['batch_id'])
+    target=rooted(upload_root/(Path(job).name+suffix))
     if target.exists():raise FileExistsError('Do not overwrite an existing upload delivery: '+str(target))
     staging=rooted(target.parent/('.staging-'+uuid.uuid4().hex))
     staging.mkdir(parents=True)

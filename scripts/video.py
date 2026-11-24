@@ -17,6 +17,10 @@ def main():
     p=sub.add_parser("doctor"); p.add_argument("--deep",action="store_true")
     p=sub.add_parser("ingest"); p.add_argument("--input",required=True); p.add_argument("--timestamp",help="YYYYMMDDHHMMSS if absent from filename")
     p=sub.add_parser("status"); p.add_argument("--job")
+    for name in ['batch-create','batch-prepare','batch-rough','batch-review','batch-transcribe-rough','batch-check']:
+        p=sub.add_parser(name); p.add_argument('--batch',required=True)
+    p=sub.add_parser('rough'); p.add_argument('--job',required=True)
+    p=sub.add_parser('rough-transcribe'); p.add_argument('--job',required=True)
     for name in ["transcribe","correct-transcript","archive","review","approve","edit","subtitles","preview","render","frames","verify","publish"]:
         p=sub.add_parser(name); p.add_argument("--job",required=True)
         if name=="transcribe":
@@ -24,7 +28,9 @@ def main():
         elif name=="correct-transcript": p.add_argument("--spec",required=True); p.add_argument("--edited",action="store_true")
         elif name=="archive": p.add_argument("--title",required=True)
         elif name=="review": p.add_argument("--spec",required=True); p.add_argument("--trim-pauses",action="store_true")
-        elif name=="approve": p.add_argument("--message",required=True); p.add_argument("--plan-hash",required=True)
+        elif name=="approve":
+            p.add_argument("--message",required=True); p.add_argument("--plan-hash",required=True)
+            p.add_argument('--rough-version',help='Required when confirming a playable rough cut')
         elif name=="subtitles": p.add_argument("--spec",required=True)
         elif name=="preview":
             p.add_argument("--text",required=True); p.add_argument("--emphasis"); p.add_argument("--at",type=float,required=True)
@@ -38,6 +44,11 @@ def main():
         p=sub.add_parser(name);p.add_argument('--job',required=True)
         if name=='subtitle-approve':p.add_argument('--message',required=True);p.add_argument('--subtitle-hash',required=True)
     args=parser.parse_args()
+    if args.command.startswith('batch-'):
+        from video_pipeline import batch
+        if args.command=='batch-transcribe-rough': return batch.render_batch(args.batch,transcribe_only=True)
+        if args.command=='batch-check': return batch.check(args.batch)
+        return {'batch-create':batch.create,'batch-prepare':batch.prepare,'batch-rough':batch.render_batch,'batch-review':batch.refresh}[args.command](args.batch)
     from video_pipeline import intake,asr,editing,captions
     if args.command=="doctor": return intake.doctor(args.deep)
     if args.command=="ingest": return intake.ingest(args.input,args.timestamp)
@@ -45,6 +56,13 @@ def main():
         if args.job: return read(job_path(args.job)/"manifest.json")
         return [dict(job=rel(p.parent),status=read(p)["status"],title=read(p).get("title")) for p in sorted((ROOT/"process").glob("*/manifest.json"))]
     job=job_path(args.job)
+    if args.command=='rough':
+        from video_pipeline import batch
+        batch.rough(job)
+        return batch.transcribe_rough(job)
+    if args.command=='rough-transcribe':
+        from video_pipeline import batch
+        return batch.transcribe_rough(job)
     if args.command in ['subtitle-review','subtitle-approve']:
         from video_pipeline import subtitle_review
         return subtitle_review.prepare(job) if args.command=='subtitle-review' else subtitle_review.approve(job,args.message,args.subtitle_hash)
@@ -60,7 +78,7 @@ def main():
     if args.command=="correct-transcript": return asr.correct_transcript(job,args.spec,args.edited)
     if args.command=="archive": return intake.archive(job,args.title)
     if args.command=="review": return intake.review(job,args.spec,args.trim_pauses)
-    if args.command=="approve": return intake.approve(job,args.message,args.plan_hash)
+    if args.command=="approve": return intake.approve(job,args.message,args.plan_hash,args.rough_version)
     if args.command=="subtitles": return captions.subtitles(job,args.spec)
     if args.command=="preview": return captions.preview(job,args.text,args.emphasis,args.at)
     if args.command=="publish": return editing.publish(job,args.visual_note)

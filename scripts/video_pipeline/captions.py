@@ -13,6 +13,10 @@ def layout(style,width,height):
 def norm(text):
     return "".join(c for c in text if c.isalnum())
 
+def display_units(text):
+    """Chinese-width units; keep short Latin product names intact on one line."""
+    return sum(.55 if c.isascii() and c.isalnum() else 1 for c in text)
+
 def character_stream(data):
     from opencc import OpenCC
     cc=OpenCC("t2s"); chars=[]
@@ -88,7 +92,7 @@ def subtitles(job,spec_path):
     cues=[]; offset=0
     for i,line in enumerate(lines):
         length=len(norm(line["text"]))
-        if not length or len(line["text"])>settings["max_characters"]: raise ValueError(f"Empty or too-long caption (limit {settings['max_characters']} for this frame): {line}")
+        if not length or display_units(line["text"])>settings["max_characters"]: raise ValueError(f"Empty or too-long caption (limit {settings['max_characters']} Chinese-width units for this frame): {line}")
         span=chars[offset:offset+length]; offset+=length
         colored(line["text"],line.get("emphasis"))
         start=max(0,span[0]["start"]-0.04)

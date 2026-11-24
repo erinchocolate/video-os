@@ -111,11 +111,23 @@ def review(job,spec_path,trim_pauses=False):
     if not spec.get("summary"): raise ValueError("Review spec needs a content-specific summary")
     cuts=list(spec.get("cuts",[]))
     if trim_pauses:
-        for p in read(job/"silences.json"):
+        policy=spec.get('pause_policy',{})
+        gap=float(policy.get('merge_noise_gap',0)); pad=float(policy.get('padding',.15))
+        if not 0<=gap<=.1 or not .04<=pad<=.2: raise ValueError('Invalid pause policy')
+        pauses=[]
+        for p in read(job/'silences.json'):
+            if pauses and p['start']-pauses[-1]['end']<=gap:
+                pauses[-1]['end']=p['end']; pauses[-1]['duration']=p['end']-pauses[-1]['start']
+            else: pauses.append(dict(p))
+        for p in pauses:
             if p["duration"]<0.6: continue
-            s,e=p["start"]+0.15,min(p["end"]-0.15,duration)
+            if any(p['start']<b and p['end']>a for a,b in policy.get('preserve_ranges',[])): continue
+            s,e=p["start"]+pad,min(p["end"]-pad,duration)
+            if policy.get('trim_empty_edges'):
+                if p['start']<=.01:s=0
+                if duration-p['end']<=.05:e=duration
             if s>=e or any(s<c["end"] and e>c["start"] for c in cuts): continue
-            cuts.append(dict(start=s,end=e,kind="pause",text="较长停顿",reason="压短停顿，保留两侧各约 0.15 秒。"))
+            cuts.append(dict(start=s,end=e,kind="pause",text="较长停顿",reason=f"压短停顿，保留两侧各约 {pad:g} 秒；合并间隔不超过 {gap:g} 秒的短促噪声，避免残留无话语动作碎片。"))
     cuts,merged,keeps=normalize_cuts(cuts,duration)
     estimate=sum(e-s for s,e in keeps)
     plan=dict(schema_version=1,status="awaiting_user_approval",source_path=m["source_path"],source_sha256=m["original_sha256"],
@@ -127,7 +139,7 @@ def review(job,spec_path,trim_pauses=False):
         history=job/"history"; history.mkdir(exist_ok=True)
         shutil.copy2(previous,history/("edit_plan_"+digest(previous)[:12]+".json"))
     write(previous,plan)
-    body=f"# 剪辑稿（待确认）：{m['title']}\n\n状态：待审核；尚未执行本稿的剪辑。\n\n"
+    body=f"# 剪辑稿（待确认）：{m['title']}\n\n状态：待审核；本文件记录方案，粗剪预览和版本以审片清单为准。\n\n"
     body+=f"原片：`{m['source_path']}`\n\n原片 {stamp(duration)}；预计剪后 {stamp(estimate)}（不含约 0.3 秒收尾缓冲）。\n\n{spec['summary']}\n\n"
     if plan["preserve"]: body+="保留内容："+"；".join(plan["preserve"])+"。\n\n"
     for c in cuts:
@@ -156,13 +168,18 @@ def review(job,spec_path,trim_pauses=False):
     write(job/"manifest.json",m)
     return dict(job=rel(job),status=m["status"],plan_sha256=digest(previous),cuts=len(cuts),estimated_duration=round(estimate,3))
 
-def approve(job,message,plan_hash):
+def approve(job,message,plan_hash,rough_version=None):
     m=read(job/"manifest.json")
     if m["status"]=="completed": raise ValueError("Video already completed")
     actual=digest(job/"edit_plan.json")
     if actual!=plan_hash.upper(): raise ValueError("Approval refers to a different edit-plan version")
     if not message.strip(): raise ValueError("Quote the user's actual approval message")
     approval=dict(user_message=message,plan_sha256=actual,source_sha256=m["original_sha256"],recorded_at_utc=now())
+    if (job/'rough_current.json').exists() or m.get('batch_id'):
+        if not rough_version: raise ValueError('Quote the specific rough version reviewed by the user')
+        from .batch import validate_rough
+        r=validate_rough(job,rough_version)
+        approval['rough_review']=r
     write(job/"approval.json",approval)
     shutil.copy2(job/"edit_plan.json",job/"edit_plan_approved.json")
     m.update(status="approved",editing_approved=True); write(job/"manifest.json",m)

@@ -5,6 +5,8 @@ description: 按已获用户确认的剪辑稿构建实际帧时间线、生成�
 
 # 执行已确认的剪辑
 
+未确认的预览使用 `rough`，见 [批次审阅](../video-batch/SKILL.md)。预览与本环节共用帧时间线构建逻辑，预览文件独立，不写 approval、不进入 final。用户确认后本环节才构建正式剪后音频并重新转写。
+
 输入：manifest、当前 edit_plan、匹配该版本的 approval。入口 `scripts/video.py edit`、transcribe --edited；实现 `scripts/video_pipeline/editing.py`、asr.py。
 
 ```powershell
