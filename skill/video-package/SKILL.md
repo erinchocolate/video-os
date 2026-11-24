@@ -86,3 +86,13 @@ python -X utf8 scripts/tools/archive_uploaded_batch.py --batch 批次名 --messa
 ```
 
 移动整批到upload/published/批次名，保留各条文件夹和上传工作台的相对链接。移动前upload-check，移动后逐文件哈希核对，更新package中的交付路径、published状态和用户确认，刷新批次入口。平台未列明时记录未知，不编造平台或发布时间。只发布部分条目时不得整批归档；逐条核实后另编安全迁移，保留未发布条目。raw、final、process和package保留。
+
+## 结尾：同步已发布逐字稿到 Obsidian
+
+用户确认发布并完成归档后，将最终成片文字稿同步到用户的已发布视频集合，当前目录为`C:\Users\c\Downloads\Creating\无晓 wx`。先查看既有Markdown的最大数字编号及格式，使用“下一编号 空格 最终发布标题.md”，不是原片工作标题；Windows不允许的文件名字符删去，正文保留最终成片文字稿，不使用原片转写或粗剪稿，不改写内容。此目录只收已发布视频。执行：
+
+```powershell
+python -X utf8 scripts/tools/export_published_transcripts.py --batch 批次名 --vault "C:\Users\c\Downloads\Creating\无晓 wx"
+```
+
+脚本核对发布确认和交付哈希，逐条记录目标文件及哈希到package/任务/obsidian_export.json；已导出且哈希相同则跳过，不重复编号，不覆盖已有笔记。目标缺失、被用户编辑或目录变更时先核实，不自动覆盖。目录不可访问时明确报告同步未完成，不能把本地暂存当作同步成功。此为本地文件写入，不是平台上传。
