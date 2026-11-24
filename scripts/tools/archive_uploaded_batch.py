@@ -27,6 +27,8 @@ def archive(name,message):
   packaging.upload_check(job)
   packaging.event(pkg,'user_reported_published',dict(message=message,archive=m['upload_path']))
  write(target/'发布归档记录.json',dict(batch=name,user_message=message,platforms='用户未逐一列明',files_verified=before,archived_at_utc=now()))
+ data.update(review_archived=True,review_archived_at_utc=now())
+ write(ROOT/'review'/name/'batch.json',data)
  batch.refresh(name)
  return rel(target)
 if __name__=='__main__':

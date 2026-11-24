@@ -230,7 +230,13 @@ def refresh(name):
         page=page.replace('<table>', '<p>已退出本批：'+html.escape('；'.join('原第 '+str(x.get('original_number',''))+' 条：'+x.get('exclusion_reason','') for x in data['excluded_items']))+'。素材和记录保留。</p><table>',1)
     (folder/'审片清单.html').write_text(page,encoding='utf-8'); write(path,data)
     root=ROOT/'review'
-    index='<meta charset="utf-8"><h1>视频审阅入口</h1>'+''.join(f'<p><a href="{quote(p.parent.name)}/%E5%AE%A1%E7%89%87%E6%B8%85%E5%8D%95.html">{html.escape(p.parent.name)}</a></p>' for p in sorted(root.glob('*/batch.json'),reverse=True))
+    active=[];archived=[]
+    for manifest in sorted(root.glob('*/batch.json'),reverse=True):
+        record=read(manifest)
+        entry=f'<p><a href="{quote(manifest.parent.name)}/%E5%AE%A1%E7%89%87%E6%B8%85%E5%8D%95.html">{html.escape(manifest.parent.name)}</a></p>'
+        (archived if record.get('review_archived') else active).append(entry)
+    index='<meta charset="utf-8"><h1>当前待审批次</h1>'+(''.join(active) or '<p>目前没有待审批次。将新素材放入 Inbox 后开始下一批。</p>')+'<p><a href="历史审阅.html">历史审阅（已完成）</a></p>'
+    (root/'历史审阅.html').write_text('<meta charset="utf-8"><h1>已完成批次 · 历史记录</h1><p>以下不是待审任务，原位保留证据以维持链接。</p>'+''.join(archived)+'<p><a href="审阅入口.html">返回当前待审</a></p>',encoding='utf-8')
     (root/'审阅入口.html').write_text(index,encoding='utf-8')
     return dict(batch=name,total=len(data['items']),ready=ready,page=rel(folder/'审片清单.html'))
 
